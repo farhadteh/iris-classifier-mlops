@@ -1,5 +1,5 @@
 # Multi-stage Dockerfile for MLflow project
-FROM python:3.9-slim as base
+FROM python:3.9-slim AS base
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -27,31 +27,29 @@ COPY setup.py .
 # Install the package
 RUN pip install -e .
 
+# Create mlruns directory with proper permissions
+RUN mkdir -p ./mlruns && chmod 755 ./mlruns
+
 # Training stage
-FROM base as training
+FROM base AS training
 CMD ["python", "src/iris_classifier/training/train.py"]
 
 # FastAPI stage
-FROM base as fastapi
-COPY mlruns/ ./mlruns/ 2>/dev/null || true
+FROM base AS fastapi
 EXPOSE 8000
 CMD ["uvicorn", "src.iris_classifier.api.fastapi_app:app", "--host", "0.0.0.0", "--port", "8000"]
 
 # Streamlit stage  
-FROM base as streamlit
+FROM base AS streamlit
 EXPOSE 8501
 CMD ["streamlit", "run", "src/iris_classifier/api/streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
 
 # MLflow server stage
-FROM base as mlflow-server
-COPY mlruns/ ./mlruns/ 2>/dev/null || true
+FROM base AS mlflow-server
 EXPOSE 5000
 CMD ["mlflow", "server", "--host", "0.0.0.0", "--port", "5000", "--backend-store-uri", "file:./mlruns"]
 
 # Production stage (FastAPI + MLflow server)
-FROM base as production
-COPY mlruns/ ./mlruns/ 2>/dev/null || true
-COPY scripts/deployment/start_services.sh .
-RUN chmod +x start_services.sh
+FROM base AS production
 EXPOSE 8000 5000
-CMD ["./start_services.sh"]
+CMD ["uvicorn", "src.iris_classifier.api.fastapi_app:app", "--host", "0.0.0.0", "--port", "8000"]
