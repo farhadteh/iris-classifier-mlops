@@ -4,7 +4,8 @@ services:
   # MLflow Tracking Server
   mlflow-server:
     build:
-      context: .
+      context: ../../
+      dockerfile: deployment/docker/Dockerfile
       target: mlflow-server
     ports:
       - "5000:5000"
@@ -25,7 +26,8 @@ services:
   # FastAPI Model Serving
   fastapi-app:
     build:
-      context: .
+      context: ../../
+      dockerfile: deployment/docker/Dockerfile
       target: fastapi
     ports:
       - "8000:8000"
@@ -47,7 +49,8 @@ services:
   # Streamlit UI
   streamlit-app:
     build:
-      context: .
+      context: ../../
+      dockerfile: deployment/docker/Dockerfile
       target: streamlit
     ports:
       - "8501:8501"
@@ -66,7 +69,8 @@ services:
   # Training Service (run on demand)
   training:
     build:
-      context: .
+      context: ../../
+      dockerfile: deployment/docker/Dockerfile
       target: training
     volumes:
       - ./mlruns:/app/mlruns
@@ -84,7 +88,8 @@ services:
   # Development Environment
   development:
     build:
-      context: .
+      context: ../../
+      dockerfile: deployment/docker/Dockerfile
       target: base
     ports:
       - "8888:8888"  # Jupyter

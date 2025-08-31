@@ -63,16 +63,16 @@ all:
 
 # Docker commands
 docker-build:
-	docker-compose build
+	cd deployment/docker && docker-compose build
 
 docker-up:
-	docker-compose up -d
+	cd deployment/docker && docker-compose up -d
 
 docker-down:
-	docker-compose down
+	cd deployment/docker && docker-compose down
 
 docker-logs:
-	docker-compose logs -f
+	cd deployment/docker && docker-compose logs -f
 
 # Development
 test:

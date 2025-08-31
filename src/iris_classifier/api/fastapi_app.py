@@ -82,7 +82,7 @@ def load_model():
 
         # Try to load from model registry first
         try:
-            model_name = "tracking-quickstart"
+            model_name = "iris-logistic_regression"
             model_version = "latest"
             model_uri = f"models:/{model_name}/{model_version}"
             model = mlflow.pyfunc.load_model(model_uri)
@@ -106,7 +106,7 @@ def load_model():
         except Exception as e:
             logger.warning(f"Could not load from model registry: {e}")
             # Fallback: load the latest model from runs
-            experiment_name = "MLflow Quickstart"
+            experiment_name = "Iris Classification"
             try:
                 experiment = mlflow.get_experiment_by_name(experiment_name)
                 if experiment:
@@ -117,7 +117,7 @@ def load_model():
                     )
                     if not runs.empty:
                         run_id = runs.iloc[0]["run_id"]
-                        model_uri = f"runs:/{run_id}/iris_model"
+                        model_uri = f"runs:/{run_id}/model"
                         model = mlflow.pyfunc.load_model(model_uri)
                         model_info = {
                             "model_name": "iris_model",
