@@ -20,9 +20,10 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy source code
+# Copy source code and necessary files
 COPY src/ ./src/
 COPY setup.py .
+COPY README.md .
 
 # Install the package
 RUN pip install -e .
