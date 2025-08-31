@@ -354,6 +354,95 @@ kill -9 <process_id>
 lsof -ti:8000 | xargs kill -9
 ```
 
+## 🌊 Branch Workflow & Deployment Cycle
+
+This project implements a complete **GitOps workflow** with separate branches for development and production:
+
+### 📋 Branch Strategy
+
+| Branch | Purpose | Deployment Target | Pipeline Stages |
+|--------|---------|------------------|-----------------|
+| `develop` | 🧪 Development & Testing | Staging Environment | test → build → **deploy-staging** |
+| `main` | 🚀 Production Ready | Production Environment | test → build → **deploy-production** → **monitor** |
+
+### 🔄 Complete Development Cycle
+
+```bash
+# 1. Work on features (develop branch)
+git checkout develop
+git pull origin develop
+
+# 2. Make changes and trigger staging deployment
+git add .
+git commit -m "feat: Add new feature"
+git push origin develop  # → Triggers staging deployment
+
+# 3. Test in staging environment
+# Review staging deployment results in GitHub Actions
+
+# 4. When ready, trigger production deployment  
+git checkout main
+git pull origin main
+git merge develop --no-ff -m "release: Deploy to production"
+git push origin main  # → Triggers production deployment
+
+# 5. Monitor production deployment
+# Check monitoring results in GitHub Actions
+```
+
+### 🛠️ Workflow Management Script
+
+Use the provided script for easy workflow management:
+
+```bash
+# Show current status and workflow help
+./scripts/deployment/branch_workflow.sh
+
+# Trigger staging deployment (from develop branch)
+./scripts/deployment/branch_workflow.sh staging
+
+# Trigger production deployment (merge develop → main)
+./scripts/deployment/branch_workflow.sh production
+
+# Check current branch and deployment status
+./scripts/deployment/branch_workflow.sh status
+```
+
+### 🎯 Deployment Pipeline Details
+
+#### **Staging Deployment** (develop branch):
+```mermaid
+graph LR
+    A[Push to develop] --> B[🧪 test]
+    B --> C[📦 build]  
+    C --> D[🚀 deploy-staging]
+    D --> E[🔍 smoke-tests]
+```
+
+#### **Production Deployment** (main branch):
+```mermaid
+graph LR
+    A[Merge to main] --> B[🧪 test]
+    B --> C[📦 build]
+    C --> D[🚀 deploy-production]
+    D --> E[🔍 health-checks]
+    E --> F[📊 monitor]
+```
+
+### 🌐 Environment Access
+
+Once deployed, services are available at:
+
+**Staging Environment:**
+- MLflow UI: `http://staging-domain:5000`
+- FastAPI docs: `http://staging-domain:8000/docs`
+- Streamlit app: `http://staging-domain:8501`
+
+**Production Environment:**
+- MLflow UI: `http://production-domain:5000`
+- FastAPI docs: `http://production-domain:8000/docs`
+- Streamlit app: `http://production-domain:8501`
+
 ## 🧪 Testing
 
 Comprehensive test suite:
