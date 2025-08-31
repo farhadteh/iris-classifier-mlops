@@ -21,15 +21,11 @@ from mlflow.models import infer_signature
 from sklearn import datasets
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import (
-    accuracy_score,
-    classification_report,
-    confusion_matrix,
-    f1_score,
-    precision_score,
-    recall_score,
-)
-from sklearn.model_selection import GridSearchCV, cross_val_score, train_test_split
+from sklearn.metrics import (accuracy_score, classification_report,
+                             confusion_matrix, f1_score, precision_score,
+                             recall_score)
+from sklearn.model_selection import (GridSearchCV, cross_val_score,
+                                     train_test_split)
 from sklearn.svm import SVC
 
 # Configure logging

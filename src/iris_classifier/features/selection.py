@@ -8,13 +8,8 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.feature_selection import (
-    RFE,
-    SelectFromModel,
-    SelectKBest,
-    f_classif,
-    mutual_info_classif,
-)
+from sklearn.feature_selection import (RFE, SelectFromModel, SelectKBest,
+                                       f_classif, mutual_info_classif)
 
 logger = logging.getLogger(__name__)
 
