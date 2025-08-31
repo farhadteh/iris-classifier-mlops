@@ -190,13 +190,13 @@ class TestAPI:
         # Test CORS by checking if the app handles cross-origin requests properly
         response = client.get("/")
         assert response.status_code == 200
-        
+
         # Test that a POST request works (this indicates CORS is configured properly)
         test_data = {
             "sepal_length": 5.1,
             "sepal_width": 3.5,
             "petal_length": 1.4,
-            "petal_width": 0.2
+            "petal_width": 0.2,
         }
         response = client.post("/predict", json=test_data)
         # Should work regardless of model loading status
