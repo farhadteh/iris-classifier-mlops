@@ -14,11 +14,14 @@ import pytest
 # Add the parent directory to the path so we can import our modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from iris_classifier.models.legacy_model import (DataProcessor, IrisPredictor,
-                                                 ModelManager,
-                                                 create_sample_data,
-                                                 get_model_info,
-                                                 setup_mlflow_tracking)
+from iris_classifier.models.legacy_model import (
+    DataProcessor,
+    IrisPredictor,
+    ModelManager,
+    create_sample_data,
+    get_model_info,
+    setup_mlflow_tracking,
+)
 
 
 class TestDataProcessor:

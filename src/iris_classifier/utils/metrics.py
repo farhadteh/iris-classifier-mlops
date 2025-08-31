@@ -6,9 +6,14 @@ import logging
 from typing import Any, Dict
 
 import numpy as np
-from sklearn.metrics import (accuracy_score, classification_report,
-                             confusion_matrix, f1_score, precision_score,
-                             recall_score)
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+)
 
 logger = logging.getLogger(__name__)
 

@@ -2,8 +2,11 @@
 
 from .base import BaseModel
 from .ensemble import EnsembleModel
-from .sklearn_models import (LogisticRegressionModel, RandomForestModel,
-                             SVMModel)
+from .sklearn_models import (
+    LogisticRegressionModel,
+    RandomForestModel,
+    SVMModel,
+)
 
 __all__ = [
     "BaseModel",

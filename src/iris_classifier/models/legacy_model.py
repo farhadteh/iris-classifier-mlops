@@ -13,8 +13,12 @@ import mlflow.sklearn
 import numpy as np
 import pandas as pd
 from sklearn import datasets
-from sklearn.metrics import (accuracy_score, f1_score, precision_score,
-                             recall_score)
+from sklearn.metrics import (
+    accuracy_score,
+    f1_score,
+    precision_score,
+    recall_score,
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
