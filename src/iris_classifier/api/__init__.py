@@ -1,7 +1,7 @@
 """API components and utilities"""
 
-from .fastapi_app import create_app
-from .schemas import PredictionRequest, PredictionResponse
+from .fastapi_app import app
 from .middleware import setup_middleware
+from .schemas import IrisFeatures, PredictionResponse
 
-__all__ = ["create_app", "PredictionRequest", "PredictionResponse", "setup_middleware"]
+__all__ = ["app", "IrisFeatures", "PredictionResponse", "setup_middleware"]
