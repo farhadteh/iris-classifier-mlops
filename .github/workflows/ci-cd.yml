@@ -24,6 +24,11 @@ on:
         - staging
         - production
 
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
 env:
   PYTHON_VERSION: '3.9'
   REGISTRY: ghcr.io
@@ -157,11 +162,16 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     
+    - name: Convert repository name to lowercase
+      shell: bash
+      run: |
+        echo "IMAGE_NAME_LOWER=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+    
     - name: Extract metadata for FastAPI
       id: meta-fastapi
       uses: docker/metadata-action@v5
       with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-fastapi
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LOWER }}-fastapi
         tags: |
           type=ref,event=branch
           type=ref,event=pr
@@ -172,7 +182,7 @@ jobs:
       id: meta-streamlit
       uses: docker/metadata-action@v5
       with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-streamlit
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LOWER }}-streamlit
         tags: |
           type=ref,event=branch
           type=ref,event=pr
@@ -183,7 +193,7 @@ jobs:
       id: meta-mlflow
       uses: docker/metadata-action@v5
       with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-mlflow
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LOWER }}-mlflow
         tags: |
           type=ref,event=branch
           type=ref,event=pr
