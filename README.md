@@ -273,8 +273,10 @@ DEFAULT_MODEL_STAGE=Production
 
 ### Service Management
 
+#### Starting Services
+
 ```bash
-# Start all services
+# Start all services (native)
 make all
 # or: ./scripts/deployment/start_services.sh
 
@@ -284,10 +286,70 @@ make all
 # Use Docker
 make docker-up
 # or: ./scripts/deployment/start_services.sh -d
+```
 
-# Stop all services
+#### Stopping Services
+
+**Native Services (when running locally):**
+
+```bash
+# Stop all MLOps services at once
+pkill -f "mlflow server"
+pkill -f "uvicorn.*fastapi_app"
+pkill -f "streamlit run"
+
+# Or stop individual services:
+# Stop MLflow server
+pkill -f "mlflow server"
+
+# Stop FastAPI server
+pkill -f "uvicorn.*fastapi_app"
+
+# Stop Streamlit app
+pkill -f "streamlit run"
+
+# Alternative: Find and kill by process ID
+ps aux | grep -E "(streamlit|uvicorn|mlflow)" | grep -v grep
+kill <process_id>  # Replace with actual process ID
+```
+
+**Docker Services:**
+
+```bash
+# Stop all Docker services
 make docker-down
-# or: ./stop_services.sh
+# or: docker-compose down
+
+# Stop specific Docker service
+docker-compose stop fastapi-app
+docker-compose stop streamlit-app
+docker-compose stop mlflow-server
+```
+
+**Check if services are still running:**
+
+```bash
+# Check running processes
+ps aux | grep -E "(streamlit|uvicorn|mlflow)" | grep -v grep
+
+# Check if ports are still in use
+lsof -i :5000  # MLflow
+lsof -i :8000  # FastAPI
+lsof -i :8501  # Streamlit
+```
+
+**Troubleshooting:**
+
+```bash
+# If "Address already in use" error occurs:
+# 1. Find process using the port
+lsof -i :8000  # Replace with your port number
+
+# 2. Kill the process forcefully
+kill -9 <process_id>
+
+# 3. Or kill all processes on a specific port
+lsof -ti:8000 | xargs kill -9
 ```
 
 ## 🧪 Testing
