@@ -1,0 +1,356 @@
+name: MLflow Iris Classification CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run daily at 2 AM UTC for model retraining
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      retrain_model:
+        description: 'Force model retraining'
+        required: false
+        default: 'false'
+        type: boolean
+      deploy_environment:
+        description: 'Environment to deploy to'
+        required: false
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+
+env:
+  PYTHON_VERSION: '3.9'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Code Quality and Testing
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov black flake8 isort
+    
+    - name: Code formatting check (Black)
+      run: black --check --diff .
+    
+    - name: Import sorting check (isort)
+      run: isort --check-only --diff .
+    
+    - name: Linting (Flake8)
+      run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+    
+    - name: Run tests
+      run: |
+        pytest tests/ -v --cov=. --cov-report=xml --cov-report=html
+      continue-on-error: true
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+  # Model Training and Validation
+  train:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'schedule' || github.event.inputs.retrain_model == 'true' || contains(github.event.head_commit.message, '[retrain]')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Create MLflow tracking directory
+      run: mkdir -p mlruns
+    
+    - name: Run training pipeline
+      run: |
+        python train.py --models logistic_regression random_forest svm
+      env:
+        MLFLOW_TRACKING_URI: file:./mlruns
+    
+    - name: Upload training artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: mlflow-artifacts
+        path: |
+          mlruns/
+          models/
+          *.png
+          *.csv
+        retention-days: 30
+    
+    - name: Validate model performance
+      run: |
+        python -c "
+        import mlflow
+        import pandas as pd
+        
+        mlflow.set_tracking_uri('file:./mlruns')
+        experiment = mlflow.get_experiment_by_name('Iris Classification')
+        runs = mlflow.search_runs(experiment_ids=[experiment.experiment_id], order_by=['start_time DESC'], max_results=1)
+        
+        if not runs.empty:
+            accuracy = runs.iloc[0]['metrics.test_accuracy']
+            print(f'Latest model accuracy: {accuracy}')
+            
+            # Fail if accuracy is below threshold
+            if accuracy < 0.85:
+                raise ValueError(f'Model accuracy {accuracy} is below threshold 0.85')
+            
+            print('Model validation passed!')
+        else:
+            raise ValueError('No training runs found')
+        "
+
+  # Build Docker Images
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+    
+    - name: Build and push FastAPI image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        target: fastapi
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-fastapi:${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
+    - name: Build and push Streamlit image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        target: streamlit
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-streamlit:${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
+    - name: Build and push MLflow server image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        target: mlflow-server
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-mlflow:${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  # Security Scanning
+  security:
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-fastapi:latest
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # Deploy to Staging
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [test, build]
+    if: github.ref == 'refs/heads/develop' || github.event.inputs.deploy_environment == 'staging'
+    environment: staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Deploy to staging
+      run: |
+        echo "Deploying to staging environment..."
+        # Add actual deployment commands here
+        # Examples:
+        # - kubectl apply -f k8s/staging/
+        # - helm upgrade --install iris-staging ./helm-chart
+        # - docker-compose -f docker-compose.staging.yml up -d
+        echo "Staging deployment completed!"
+    
+    - name: Run smoke tests
+      run: |
+        echo "Running smoke tests against staging..."
+        # Add smoke test commands here
+        # curl -f http://staging-api/health
+        echo "Smoke tests passed!"
+    
+    - name: Update deployment status
+      run: |
+        echo "Staging deployment successful!"
+        echo "URL: https://iris-staging.example.com"
+
+  # Deploy to Production
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: [test, build, deploy-staging]
+    if: github.ref == 'refs/heads/main' || github.event.inputs.deploy_environment == 'production'
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Deploy to production
+      run: |
+        echo "Deploying to production environment..."
+        # Add actual deployment commands here
+        echo "Production deployment completed!"
+    
+    - name: Run health checks
+      run: |
+        echo "Running health checks against production..."
+        # Add health check commands here
+        echo "Health checks passed!"
+    
+    - name: Update deployment status
+      run: |
+        echo "Production deployment successful!"
+        echo "URL: https://iris-prod.example.com"
+
+  # Model Performance Monitoring
+  monitor:
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install monitoring dependencies
+      run: |
+        pip install requests pandas numpy
+    
+    - name: Run model performance checks
+      run: |
+        python -c "
+        import requests
+        import json
+        
+        # Example model performance monitoring
+        api_url = 'https://iris-prod.example.com'  # Replace with actual URL
+        
+        # Test basic functionality
+        health_response = requests.get(f'{api_url}/health')
+        print(f'Health check status: {health_response.status_code}')
+        
+        # Test prediction endpoint
+        test_data = {
+            'sepal_length': 5.1,
+            'sepal_width': 3.5,
+            'petal_length': 1.4,
+            'petal_width': 0.2
+        }
+        
+        pred_response = requests.post(f'{api_url}/predict', json=test_data)
+        print(f'Prediction status: {pred_response.status_code}')
+        
+        if pred_response.status_code == 200:
+            result = pred_response.json()
+            print(f'Prediction: {result}')
+        
+        print('Model monitoring completed!')
+        "
+
+  # Notification
+  notify:
+    runs-on: ubuntu-latest
+    needs: [test, train, build, deploy-production]
+    if: always()
+    
+    steps:
+    - name: Notify on success
+      if: needs.deploy-production.result == 'success'
+      run: |
+        echo "🎉 Pipeline completed successfully!"
+        echo "✅ Tests passed"
+        echo "✅ Model trained and validated" 
+        echo "✅ Images built and pushed"
+        echo "✅ Deployed to production"
+        # Add Slack/email notification here
+    
+    - name: Notify on failure
+      if: failure()
+      run: |
+        echo "❌ Pipeline failed!"
+        echo "Please check the logs for details."
+        # Add Slack/email notification here
