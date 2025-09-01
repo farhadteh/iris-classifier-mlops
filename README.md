@@ -780,16 +780,122 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Review the logs: `docker-compose logs -f [service-name]`
 - Run health checks: `curl http://localhost:8000/health`
 
+## 🏗️ Infrastructure as Code with Terraform
+
+**NEW: Complete AWS infrastructure automation is now available!**
+
+This project includes professional Terraform configurations to deploy your MLflow infrastructure to AWS with just a few commands.
+
+### 🚀 Quick Infrastructure Setup
+
+```bash
+# Navigate to Terraform directory
+cd deployment/terraform
+
+# Copy example configuration
+cp terraform.tfvars.example terraform.tfvars
+
+# Edit with your settings
+nano terraform.tfvars
+
+# Deploy to AWS
+terraform init
+terraform plan
+terraform apply
+```
+
+### 📋 What Gets Created
+
+The Terraform setup automatically provisions:
+
+- **🌐 VPC & Networking**: Secure network with public/private subnets
+- **🐳 ECS Fargate**: Serverless container hosting for all services
+- **⚖️ Load Balancer**: Application Load Balancer with health checks
+- **📦 S3 Storage**: Secure bucket for MLflow artifacts
+- **🗄️ RDS Database**: Optional managed database for MLflow metadata
+- **📊 CloudWatch**: Comprehensive logging and monitoring
+- **🔒 Security Groups**: Proper network security and isolation
+- **📈 Auto Scaling**: Automatic scaling based on demand
+
+### 🎯 Deployment Options
+
+| Environment | Configuration | Monthly Cost | Use Case |
+|-------------|---------------|--------------|----------|
+| **Development** | Minimal resources, no NAT/RDS | ~$20-30 | Learning & testing |
+| **Staging** | Production-like, smaller scale | ~$70-100 | Pre-production validation |
+| **Production** | High availability, full features | ~$200-400 | Production workloads |
+
+### 📚 Complete Documentation
+
+**👉 Read the comprehensive [TERRAFORM_README.md](TERRAFORM_README.md) for:**
+
+- 🎓 **Beginner-friendly guide** - No Terraform experience required!
+- 📝 **Step-by-step setup** - From AWS account to running infrastructure
+- ⚙️ **Configuration options** - Customize for your needs
+- 💰 **Cost optimization** - Save money with smart defaults
+- 🔒 **Security best practices** - Production-ready security
+- 🐛 **Troubleshooting guide** - Common issues and solutions
+- 📊 **Monitoring setup** - Built-in dashboards and alerts
+
+### 🏃‍♂️ Quick Start for Beginners
+
+1. **Install Prerequisites**:
+   ```bash
+   # Install Terraform
+   brew install terraform  # macOS
+   # or download from https://terraform.io
+   
+   # Install AWS CLI
+   brew install awscli     # macOS
+   ```
+
+2. **Configure AWS**:
+   ```bash
+   aws configure
+   # Enter your AWS Access Key ID and Secret
+   ```
+
+3. **Deploy Infrastructure**:
+   ```bash
+   cd deployment/terraform
+   cp terraform.tfvars.example terraform.tfvars
+   
+   # Edit terraform.tfvars with your project name
+   terraform init
+   terraform apply
+   ```
+
+4. **Access Your Services**:
+   ```bash
+   # Get service URLs
+   terraform output service_urls
+   
+   # Example output:
+   # mlflow_ui = "http://your-alb-123.us-west-2.elb.amazonaws.com/"
+   # fastapi_docs = "http://your-alb-123.us-west-2.elb.amazonaws.com/docs"
+   ```
+
+### 🌟 Benefits of Infrastructure as Code
+
+- **🔄 Reproducible**: Same infrastructure every time
+- **📝 Version Controlled**: Track infrastructure changes
+- **💰 Cost Effective**: Easy to create/destroy environments
+- **🚀 Professional**: Enterprise-grade setup in minutes
+- **🛡️ Secure**: Built-in security best practices
+- **📊 Observable**: Comprehensive monitoring included
+
 ## 🔮 Future Enhancements
 
+- [x] **Terraform Infrastructure** - Complete AWS automation ✅
 - [ ] Kubernetes deployment manifests
 - [ ] Model A/B testing framework
 - [ ] Advanced monitoring with Prometheus/Grafana
 - [ ] Data drift detection
 - [ ] Model interpretability dashboard
-- [ ] Multi-cloud deployment support
+- [ ] Multi-cloud deployment support (Azure, GCP)
 - [ ] Advanced feature engineering pipeline
+- [ ] GitOps workflow with ArgoCD
 
 ---
 
-Built with ❤️ using MLflow, FastAPI, Streamlit, and Docker.
+Built with ❤️ using MLflow, FastAPI, Streamlit, Docker, and Terraform.

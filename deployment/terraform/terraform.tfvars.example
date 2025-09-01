@@ -1,0 +1,208 @@
+# ===============================================================================
+# Example Terraform Variables Configuration
+# ===============================================================================
+# Copy this file to terraform.tfvars and customize for your environment
+# 
+# IMPORTANT: Never commit terraform.tfvars to version control!
+# Add terraform.tfvars to your .gitignore file
+
+# ===============================================================================
+# Required Configuration
+# ===============================================================================
+
+# Name for your MLflow project (will be used in resource names)
+project_name = "my-mlflow-project"
+
+# Environment (dev, staging, prod)
+environment = "dev"
+
+# AWS region where resources will be created
+aws_region = "us-west-2"
+
+# Owner/team responsible for this infrastructure
+owner = "your-name-or-team"
+
+# ===============================================================================
+# Cost Control Configuration
+# ===============================================================================
+
+# NAT Gateway provides internet access to private subnets
+# Cost: ~$32/month per NAT Gateway
+# Set to false for development to save costs
+create_nat_gateway = false
+
+# RDS provides managed database for MLflow metadata
+# Cost: ~$13-50/month depending on instance size
+# Set to false to use SQLite (not recommended for production)
+create_rds = false
+
+# Container resources (affects cost)
+container_cpu    = 256   # CPU units (256 = 0.25 vCPU)
+container_memory = 512   # Memory in MB
+
+# Number of running containers
+desired_count = 1
+
+# ===============================================================================
+# Database Configuration (if create_rds = true)
+# ===============================================================================
+
+# Database engine (mysql or postgresql)
+db_engine = "mysql"
+
+# Database instance class
+db_instance_class = "db.t3.micro"
+
+# Database credentials
+db_name     = "mlflow"
+db_username = "mlflow_user"
+# db_password = "your-secure-password"  # Optional - will be auto-generated if not set
+
+# ===============================================================================
+# Security Configuration
+# ===============================================================================
+
+# CIDR blocks allowed to access the load balancer
+# For development: ["0.0.0.0/0"] allows access from anywhere
+# For production: restrict to your office/VPN networks
+allowed_cidr_blocks = ["0.0.0.0/0"]
+
+# Enable deletion protection (recommended for production)
+enable_deletion_protection = false
+
+# ===============================================================================
+# Optional Features
+# ===============================================================================
+
+# Enable auto-scaling for containers
+enable_auto_scaling = true
+
+# Create CloudWatch dashboard for monitoring
+create_cloudwatch_dashboard = true
+
+# Log retention period in days
+log_retention_days = 7
+
+# ===============================================================================
+# Environment-Specific Examples
+# ===============================================================================
+
+# DEVELOPMENT ENVIRONMENT EXAMPLE:
+# project_name = "mlflow-dev"
+# environment = "dev"
+# create_nat_gateway = false
+# create_rds = false
+# container_cpu = 256
+# container_memory = 512
+# desired_count = 1
+# enable_deletion_protection = false
+
+# STAGING ENVIRONMENT EXAMPLE:
+# project_name = "mlflow-staging"
+# environment = "staging"
+# create_nat_gateway = true
+# create_rds = true
+# db_instance_class = "db.t3.micro"
+# container_cpu = 512
+# container_memory = 1024
+# desired_count = 1
+# enable_deletion_protection = false
+
+# PRODUCTION ENVIRONMENT EXAMPLE:
+# project_name = "mlflow-production"
+# environment = "prod"
+# create_nat_gateway = true
+# create_rds = true
+# db_engine = "mysql"
+# db_instance_class = "db.t3.medium"
+# container_cpu = 1024
+# container_memory = 2048
+# desired_count = 2
+# min_capacity = 2
+# max_capacity = 10
+# enable_auto_scaling = true
+# enable_deletion_protection = true
+# db_backup_retention_period = 30
+# allowed_cidr_blocks = ["10.0.0.0/8"]  # Your corporate network
+
+# ===============================================================================
+# Quick Start Commands
+# ===============================================================================
+
+# 1. Copy this file:
+#    cp terraform.tfvars.example terraform.tfvars
+
+# 2. Edit terraform.tfvars with your values:
+#    nano terraform.tfvars  # or use your preferred editor
+
+# 3. Initialize Terraform:
+#    terraform init
+
+# 4. Plan the deployment:
+#    terraform plan
+
+# 5. Deploy the infrastructure:
+#    terraform apply
+
+# 6. Get the service URLs:
+#    terraform output service_urls
+
+# 7. When done, destroy resources to save costs:
+#    terraform destroy
+
+# ===============================================================================
+# Cost Estimation Guide
+# ===============================================================================
+
+# MINIMAL CONFIGURATION (create_nat_gateway=false, create_rds=false):
+# - ECS Fargate: ~$10-15/month
+# - Application Load Balancer: ~$16.50/month
+# - S3 Storage: ~$1-3/month
+# - CloudWatch Logs: ~$2-5/month
+# TOTAL: ~$20-30/month
+
+# STANDARD CONFIGURATION (create_nat_gateway=true, create_rds=true):
+# - ECS Fargate: ~$15-25/month
+# - Application Load Balancer: ~$16.50/month
+# - NAT Gateway: ~$32/month
+# - RDS db.t3.micro: ~$13/month
+# - S3 Storage: ~$2-5/month
+# - CloudWatch: ~$3-8/month
+# TOTAL: ~$80-120/month
+
+# PRODUCTION CONFIGURATION:
+# - Higher instance counts and sizes
+# - Additional monitoring and backup costs
+# TOTAL: ~$200-400/month
+
+# ===============================================================================
+# Security Notes
+# ===============================================================================
+
+# NEVER commit terraform.tfvars to version control!
+# Add this to your .gitignore:
+# echo "terraform.tfvars" >> .gitignore
+# echo "*.tfstate*" >> .gitignore
+# echo ".terraform/" >> .gitignore
+
+# For production:
+# 1. Use specific CIDR blocks, not 0.0.0.0/0
+# 2. Enable deletion protection
+# 3. Use strong, unique passwords
+# 4. Enable encryption at rest and in transit
+# 5. Regularly rotate access keys
+# 6. Monitor access logs
+
+# ===============================================================================
+# Support and Documentation
+# ===============================================================================
+
+# For detailed documentation, see:
+# - TERRAFORM_README.md in the project root
+# - deployment/terraform/variables.tf for all available options
+# - AWS documentation for service-specific details
+
+# For help:
+# - Project issues: [Your project's issue tracker]
+# - Terraform documentation: https://terraform.io/docs
+# - AWS documentation: https://docs.aws.amazon.com
